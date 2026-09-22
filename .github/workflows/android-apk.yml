@@ -1,0 +1,58 @@
+name: Android APK
+
+on:
+  push:
+    branches: [main, work]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configurar Java compatible con AGP
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Configurar Gradle compatible con Flutter
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.14.4'
+      - name: Instalar dependencias
+        run: flutter pub get
+      - name: Analizar código
+        run: flutter analyze
+      - name: Ejecutar pruebas
+        run: flutter test
+      - name: Generar Gradle Wrapper
+        run: |
+          wrapper_dir="$RUNNER_TEMP/cibus-gradle-wrapper"
+          mkdir -p "$wrapper_dir"
+          touch "$wrapper_dir/settings.gradle"
+          gradle --project-dir "$wrapper_dir" wrapper \
+            --gradle-version 8.14.4 \
+            --distribution-type bin
+          cp "$wrapper_dir/gradlew" android/gradlew
+          cp "$wrapper_dir/gradle/wrapper/gradle-wrapper.jar" \
+            android/gradle/wrapper/gradle-wrapper.jar
+          chmod +x android/gradlew
+      - name: Compilar APK de prueba
+        run: flutter build apk --debug
+      - name: Publicar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: cibus-android-debug
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
