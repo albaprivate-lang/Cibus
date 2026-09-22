@@ -19,7 +19,7 @@ plugins {
     // Se mantiene AGP 8 para usar la DSL estable. AGP 9 requiere la migración
     // a la nueva DSL de Android y todavía no es necesario para este proyecto.
     id("com.android.application") version "8.11.1" apply false
-    id("org.jetbrains.kotlin.android") version "2.1.0" apply false
+    id("org.jetbrains.kotlin.android") version "2.2.20" apply false
 }
 
 include(":app")
