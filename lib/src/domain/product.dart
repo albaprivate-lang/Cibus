@@ -64,7 +64,7 @@ class Product {
 
   int get dataPoints {
     final textCount = [name, brand, ingredients]
-        .where((value) => value != null && value!.trim().isNotEmpty)
+        .where((value) => value?.trim().isNotEmpty ?? false)
         .length;
     return textCount + nutriments.availableCount + additives.length;
   }

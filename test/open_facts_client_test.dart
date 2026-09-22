@@ -7,7 +7,7 @@ import 'package:http/http.dart' as http;
 void main() {
   test('consulta y transforma un alimento de Open Food Facts', () async {
     final client = OpenFactsClient(httpClient: MockClient((request) async {
-      expect(request.host, 'world.openfoodfacts.org');
+      expect(request.url.host, 'world.openfoodfacts.org');
       return http.Response('''{
         "status": 1,
         "product": {
