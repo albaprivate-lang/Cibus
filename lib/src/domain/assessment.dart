@@ -26,10 +26,10 @@ class CibusAssessment {
     this.missingData = const [],
     this.warnings = const [],
     this.metrics = const [],
-    this.methodologyVersion = methodologyVersion,
+    this.methodologyVersion = defaultMethodologyVersion,
   });
 
-  static const methodologyVersion = 'Cibus Food 1.0.0';
+  static const defaultMethodologyVersion = 'Cibus Food 1.0.0';
 
   final CibusStatus status;
   final ConfidenceLevel confidence;
