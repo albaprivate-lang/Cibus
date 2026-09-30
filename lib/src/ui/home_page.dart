@@ -98,10 +98,9 @@ class HomePage extends StatelessWidget {
 }
 
 class _ScaleRow extends StatelessWidget {
-  const _ScaleRow({required this.color, required this.label, this.border = false});
+  const _ScaleRow({required this.color, required this.label});
   final Color color;
   final String label;
-  final bool border;
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -113,7 +112,6 @@ class _ScaleRow extends StatelessWidget {
             decoration: BoxDecoration(
               color: color,
               shape: BoxShape.circle,
-              border: border ? Border.all(color: const Color(0xFFB8BFBA)) : null,
             ),
           ),
           const SizedBox(width: 12),
