@@ -115,7 +115,12 @@ class _ScaleRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
         ]),
       );
 }
