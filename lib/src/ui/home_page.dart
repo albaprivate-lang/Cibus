@@ -65,17 +65,17 @@ class HomePage extends StatelessWidget {
                         children: [
                           Text('Escala Cibus', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
                           const SizedBox(height: 6),
-                          const Text('La escala se aplicará cuando existan reglas verificadas y datos suficientes.'),
+                          const Text('La escala usa datos nutricionales por 100 g o 100 ml y reglas públicas documentadas.'),
                           const SizedBox(height: 16),
-                          const _ScaleRow(color: Color(0xFF2E9D67), label: 'Excelente'),
-                          const _ScaleRow(color: Color(0xFFF3F4EF), label: 'Bueno', border: true),
-                          const _ScaleRow(color: Color(0xFFE99736), label: 'Mejorable'),
-                          const _ScaleRow(color: Color(0xFFD7504B), label: 'Poco recomendable'),
+                          const _ScaleRow(color: Color(0xFF218739), label: 'Verde · perfil favorable'),
+                          const _ScaleRow(color: Color(0xFFF4C430), label: 'Amarillo · atención moderada'),
+                          const _ScaleRow(color: Color(0xFFE87722), label: 'Naranja · atención elevada'),
+                          const _ScaleRow(color: Color(0xFFC62828), label: 'Rojo · atención muy elevada'),
                           const Divider(height: 28),
                           const Row(children: [
                             Icon(Icons.help_outline_rounded, color: Color(0xFF66736E)),
                             SizedBox(width: 10),
-                            Expanded(child: Text('Datos insuficientes / Análisis en desarrollo')),
+                            Expanded(child: Text('Datos insuficientes · se explica qué falta')),
                           ]),
                         ],
                       ),
@@ -98,10 +98,9 @@ class HomePage extends StatelessWidget {
 }
 
 class _ScaleRow extends StatelessWidget {
-  const _ScaleRow({required this.color, required this.label, this.border = false});
+  const _ScaleRow({required this.color, required this.label});
   final Color color;
   final String label;
-  final bool border;
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -113,11 +112,15 @@ class _ScaleRow extends StatelessWidget {
             decoration: BoxDecoration(
               color: color,
               shape: BoxShape.circle,
-              border: border ? Border.all(color: const Color(0xFFB8BFBA)) : null,
             ),
           ),
           const SizedBox(width: 12),
-          Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
         ]),
       );
 }
