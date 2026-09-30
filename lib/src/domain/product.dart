@@ -1,8 +1,17 @@
 enum ProductKind { food, cosmetic }
 
-enum CibusStatus { excellent, good, improvable, notRecommended, developing, insufficient }
+enum CibusStatus {
+  green,
+  yellow,
+  orange,
+  red,
+  developing,
+  insufficient,
+}
 
 enum ConfidenceLevel { high, medium, low }
+
+enum NutritionBasis { per100g, per100ml, perServing, unknown }
 
 class Nutriments {
   const Nutriments({
@@ -49,6 +58,11 @@ class Product {
     this.nutriments = const Nutriments(),
     this.additives = const [],
     this.ingredientInformation = const [],
+    this.categories = const [],
+    this.isBeverage,
+    this.nutritionBasis = NutritionBasis.unknown,
+    this.servingSize,
+    this.lastModified,
   });
 
   final String barcode;
@@ -61,6 +75,11 @@ class Product {
   final Nutriments nutriments;
   final List<String> additives;
   final List<String> ingredientInformation;
+  final List<String> categories;
+  final bool? isBeverage;
+  final NutritionBasis nutritionBasis;
+  final String? servingSize;
+  final DateTime? lastModified;
 
   int get dataPoints {
     final textCount = [name, brand, ingredients]

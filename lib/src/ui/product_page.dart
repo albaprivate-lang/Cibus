@@ -66,7 +66,11 @@ class _ProductDetails extends StatelessWidget {
           title: 'Valoración Cibus',
           subtitle: 'Interpretación propia · separada de los datos de origen',
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            _StatusPill(text: _statusText(assessment.status)),
+            _StatusPill(
+              text: _statusText(assessment.status),
+              color: _statusColor(assessment.status),
+              icon: _statusIcon(assessment.status),
+            ),
             const SizedBox(height: 14),
             Text('Confianza: ${_confidenceText(assessment.confidence)}', style: const TextStyle(fontWeight: FontWeight.w700)),
             const SizedBox(height: 18),
@@ -80,6 +84,20 @@ class _ProductDetails extends StatelessWidget {
                     Expanded(child: Text(reason)),
                   ]),
                 )),
+            if (assessment.missingData.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Text('Información que falta', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+              const SizedBox(height: 8),
+              ...assessment.missingData.map((message) => _NoticeRow(icon: Icons.help_outline, text: message)),
+            ],
+            if (assessment.warnings.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Text('Datos incoherentes', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+              const SizedBox(height: 8),
+              ...assessment.warnings.map((message) => _NoticeRow(icon: Icons.warning_amber_rounded, text: message)),
+            ],
+            const SizedBox(height: 10),
+            Text('Método: ${assessment.methodologyVersion}', style: const TextStyle(color: Color(0xFF66736E), fontSize: 12)),
           ]),
         ),
         const SizedBox(height: 16),
@@ -90,8 +108,11 @@ class _ProductDetails extends StatelessWidget {
             _DataRow(label: 'Tipo', value: product.kind == ProductKind.food ? 'Alimento' : 'Cosmético'),
             _DataRow(label: 'Código de barras', value: product.barcode),
             _DataRow(label: product.kind == ProductKind.food ? 'Ingredientes' : 'INCI / ingredientes', value: product.ingredients),
-            if (product.kind == ProductKind.food) ..._nutritionRows(product.nutriments),
+            if (product.kind == ProductKind.food) ..._nutritionRows(product),
             if (product.kind == ProductKind.food) _DataRow(label: 'Aditivos declarados', value: product.additives.isEmpty ? null : product.additives.join(', ')),
+            if (product.kind == ProductKind.food) _DataRow(label: 'Base nutricional', value: _basisText(product.nutritionBasis)),
+            if (product.servingSize != null) _DataRow(label: 'Porción declarada', value: product.servingSize),
+            if (product.lastModified != null) _DataRow(label: 'Datos actualizados', value: product.lastModified!.toIso8601String()),
             if (product.kind == ProductKind.cosmetic) _DataRow(label: 'Información disponible de ingredientes', value: product.ingredientInformation.isEmpty ? null : product.ingredientInformation.join(', ')),
             _DataRow(label: 'Fuente', value: product.sourceName),
           ]),
@@ -102,19 +123,53 @@ class _ProductDetails extends StatelessWidget {
     );
   }
 
-  List<Widget> _nutritionRows(Nutriments n) => [
-        _DataRow(label: 'Energía', value: _amount(n.energyKcal, 'kcal / 100 g')),
-        _DataRow(label: 'Grasas', value: _amount(n.fat, 'g / 100 g')),
-        _DataRow(label: 'Grasas saturadas', value: _amount(n.saturatedFat, 'g / 100 g')),
-        _DataRow(label: 'Hidratos de carbono', value: _amount(n.carbohydrates, 'g / 100 g')),
-        _DataRow(label: 'Azúcares', value: _amount(n.sugars, 'g / 100 g')),
-        _DataRow(label: 'Fibra', value: _amount(n.fiber, 'g / 100 g')),
-        _DataRow(label: 'Proteínas', value: _amount(n.proteins, 'g / 100 g')),
-        _DataRow(label: 'Sal', value: _amount(n.salt, 'g / 100 g')),
-      ];
+  List<Widget> _nutritionRows(Product product) {
+    final n = product.nutriments;
+    final base = product.nutritionBasis == NutritionBasis.per100ml
+        ? '100 ml'
+        : '100 g';
+    return [
+      _DataRow(label: 'Energía', value: _amount(n.energyKcal, 'kcal / $base')),
+      _DataRow(label: 'Grasas', value: _amount(n.fat, 'g / $base')),
+      _DataRow(label: 'Grasas saturadas', value: _amount(n.saturatedFat, 'g / $base')),
+      _DataRow(label: 'Hidratos de carbono', value: _amount(n.carbohydrates, 'g / $base')),
+      _DataRow(label: 'Azúcares', value: _amount(n.sugars, 'g / $base')),
+      _DataRow(label: 'Fibra', value: _amount(n.fiber, 'g / $base')),
+      _DataRow(label: 'Proteínas', value: _amount(n.proteins, 'g / $base')),
+      _DataRow(label: 'Sal', value: _amount(n.salt, 'g / $base')),
+    ];
+  }
 
   String? _amount(num? value, String unit) => value == null ? null : '${value.toString()} $unit';
-  String _statusText(CibusStatus status) => status == CibusStatus.insufficient ? 'Datos insuficientes' : 'Análisis en desarrollo';
+  String _statusText(CibusStatus status) => switch (status) {
+        CibusStatus.green => 'Verde · perfil favorable',
+        CibusStatus.yellow => 'Amarillo · atención moderada',
+        CibusStatus.orange => 'Naranja · atención elevada',
+        CibusStatus.red => 'Rojo · atención muy elevada',
+        CibusStatus.insufficient => 'Datos insuficientes',
+        CibusStatus.developing => 'Análisis en desarrollo',
+      };
+  Color _statusColor(CibusStatus status) => switch (status) {
+        CibusStatus.green => const Color(0xFF176B35),
+        CibusStatus.yellow => const Color(0xFF7A5B00),
+        CibusStatus.orange => const Color(0xFF9A4300),
+        CibusStatus.red => const Color(0xFFA51D1D),
+        CibusStatus.insufficient || CibusStatus.developing => const Color(0xFF355E4D),
+      };
+  IconData _statusIcon(CibusStatus status) => switch (status) {
+        CibusStatus.green => Icons.check_circle_outline,
+        CibusStatus.yellow => Icons.info_outline,
+        CibusStatus.orange => Icons.warning_amber_rounded,
+        CibusStatus.red => Icons.report_outlined,
+        CibusStatus.insufficient => Icons.help_outline,
+        CibusStatus.developing => Icons.science_outlined,
+      };
+  String? _basisText(NutritionBasis basis) => switch (basis) {
+        NutritionBasis.per100g => 'Por 100 g',
+        NutritionBasis.per100ml => 'Por 100 ml',
+        NutritionBasis.perServing => 'Solo por porción (no se usa para valorar)',
+        NutritionBasis.unknown => null,
+      };
   String _confidenceText(ConfidenceLevel confidence) => switch (confidence) {
         ConfidenceLevel.high => 'Alto',
         ConfidenceLevel.medium => 'Medio',
@@ -155,16 +210,34 @@ class _DataRow extends StatelessWidget {
 }
 
 class _StatusPill extends StatelessWidget {
-  const _StatusPill({required this.text});
+  const _StatusPill({required this.text, required this.color, required this.icon});
   final String text;
+  final Color color;
+  final IconData icon;
   @override
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
-        decoration: BoxDecoration(color: const Color(0xFFE8EEE9), borderRadius: BorderRadius.circular(99)),
+        decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(99), border: Border.all(color: color)),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(Icons.science_outlined, size: 18, color: Color(0xFF355E4D)),
+          Icon(icon, size: 18, color: color),
           const SizedBox(width: 7),
-          Text(text, style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF244B3B))),
+          Text(text, style: TextStyle(fontWeight: FontWeight.w700, color: color)),
+        ]),
+      );
+}
+
+class _NoticeRow extends StatelessWidget {
+  const _NoticeRow({required this.icon, required this.text});
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Icon(icon, size: 19, color: const Color(0xFF66736E)),
+          const SizedBox(width: 9),
+          Expanded(child: Text(text)),
         ]),
       );
 }

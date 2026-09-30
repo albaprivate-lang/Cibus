@@ -54,6 +54,10 @@ class OpenFactsClient {
         'nutriments',
         'additives_tags',
         'ingredients',
+        'categories_tags',
+        'nutrition_data_per',
+        'serving_size',
+        'last_modified_t',
       ].join(','),
     });
     final response = await _httpClient.get(
@@ -85,6 +89,15 @@ class OpenFactsClient {
     final ingredientRows = json['ingredients'] is List
         ? (json['ingredients'] as List).whereType<Map<String, dynamic>>()
         : const Iterable<Map<String, dynamic>>.empty();
+    final categories = (json['categories_tags'] as List?)
+            ?.whereType<String>()
+            .toList() ??
+        const <String>[];
+    final isBeverage = kind == ProductKind.food
+        ? _isBeverage(categories)
+        : null;
+    final nutritionDataPer = _text(json['nutrition_data_per']);
+    final nutritionBasis = _nutritionBasis(nutritionDataPer, isBeverage);
     return Product(
       barcode: barcode,
       kind: kind,
@@ -112,6 +125,11 @@ class OpenFactsClient {
           .map((item) => _text(item['text']) ?? _text(item['id']))
           .whereType<String>()
           .toList(),
+      categories: categories,
+      isBeverage: isBeverage,
+      nutritionBasis: nutritionBasis,
+      servingSize: _text(json['serving_size']),
+      lastModified: _dateTime(json['last_modified_t']),
     );
   }
 
@@ -121,4 +139,48 @@ class OpenFactsClient {
   }
 
   num? _number(Object? value) => value is num ? value : num.tryParse('$value');
+
+  bool? _isBeverage(List<String> categories) {
+    if (categories.isEmpty) return null;
+    // Open Food Facts devuelve la jerarquía completa en categories_tags. Una
+    // bebida debería contener el ancestro canónico `en:beverages`. Solo se
+    // aceptan etiquetas exactas: buscar sufijos como "-beverages" clasificaría
+    // erróneamente `en:plant-based-foods-and-beverages` como bebida.
+    const canonicalBeverageCategories = {
+      'beverages',
+      'waters',
+      'juices',
+      'soft-drinks',
+      'plant-based-beverages',
+      'dairy-drinks',
+    };
+    final normalized = categories.map(
+      (category) => category
+          .replaceFirst(RegExp(r'^[^:]+:'), '')
+          .trim()
+          .toLowerCase(),
+    ).toSet();
+    if (normalized.any(canonicalBeverageCategories.contains)) return true;
+    if (normalized.contains('plant-based-foods-and-beverages')) return null;
+    return false;
+  }
+
+  NutritionBasis _nutritionBasis(String? nutritionDataPer, bool? isBeverage) {
+    if (nutritionDataPer == 'serving') return NutritionBasis.perServing;
+    if (isBeverage == null) return NutritionBasis.unknown;
+    if (nutritionDataPer == '100ml') {
+      return isBeverage ? NutritionBasis.per100ml : NutritionBasis.unknown;
+    }
+    if (nutritionDataPer == '100g') {
+      return isBeverage ? NutritionBasis.per100ml : NutritionBasis.per100g;
+    }
+    return NutritionBasis.unknown;
+  }
+
+  DateTime? _dateTime(Object? timestamp) {
+    final seconds = _number(timestamp)?.toInt();
+    return seconds == null
+        ? null
+        : DateTime.fromMillisecondsSinceEpoch(seconds * 1000, isUtc: true);
+  }
 }

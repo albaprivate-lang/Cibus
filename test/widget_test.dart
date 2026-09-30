@@ -7,10 +7,10 @@ void main() {
 
     expect(find.text('Cibus'), findsOneWidget);
     expect(find.text('Escanear código de barras'), findsOneWidget);
-    expect(find.text('Excelente'), findsOneWidget);
-    expect(find.text('Bueno'), findsOneWidget);
-    expect(find.text('Mejorable'), findsOneWidget);
-    expect(find.text('Poco recomendable'), findsOneWidget);
-    expect(find.text('Datos insuficientes / Análisis en desarrollo'), findsOneWidget);
+    expect(find.text('Verde · perfil favorable'), findsOneWidget);
+    expect(find.text('Amarillo · atención moderada'), findsOneWidget);
+    expect(find.text('Naranja · atención elevada'), findsOneWidget);
+    expect(find.text('Rojo · atención muy elevada'), findsOneWidget);
+    expect(find.text('Datos insuficientes · se explica qué falta'), findsOneWidget);
   });
 }
